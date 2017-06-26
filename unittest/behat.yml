@@ -1,0 +1,18 @@
+default:
+    suites:
+        Core:
+            paths: [ %paths.base%/features/core/]
+            contexts: [ FeatureContext ]
+
+        WindowManagement:
+            paths: [ %paths.base%/features/window/]
+            contexts: [ FeatureContext ]
+
+    extensions:
+        Behat\MinkExtension:
+            base_url:  '' # Here we need to specify URL of test server
+            sessions:
+                default:
+                    goutte: ~
+                
+        
