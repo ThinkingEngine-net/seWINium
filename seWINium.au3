@@ -2,6 +2,10 @@
 #AutoIt3Wrapper_Compile_Both=y
 #AutoIt3Wrapper_UseX64=y
 #AutoIt3Wrapper_Change2CUI=y
+#AutoIt3Wrapper_Res_Description=seWINium Test Driver
+#AutoIt3Wrapper_Res_Fileversion=0.0.0.16
+#AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
+#AutoIt3Wrapper_Res_LegalCopyright=(c) 2017 logic-worx.com
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 #cs ----------------------------------------------------------------------------
 
@@ -12,18 +16,54 @@
 
 #ce ----------------------------------------------------------------------------
 
-; Script Start - Add your code below here
+; --- Init
 
 WriteLineToConsole("seWINium Windows GUI Test Driver")
 
 Dim $IP = "127.0.0.1" ; only on local host
 Dim $Port = 8777 ; the listening port
 
+;--- Read Secuity Key (Passphrase)
 
+Global $gSecKey=""
 
+$gSecKey=RegRead("HKEY_CURRENT_USER\software\logic-worx\sewinium","key");
+
+if (@error<>0) Then
+	$gSecKey=""
+EndIf
+
+;--- Process Command Line
 
 if ($CmdLine[0]>0) Then
-	$Port=Number($CmdLine[0])
+	for $n =1 to $CmdLine[0]
+		$cmd = StringLower($CmdLine[$n])
+
+		if ($cmd="-help" or $cmd="-h") Then
+			WriteLineToConsole("seWINium driver help.")
+			WriteLineToConsole("Version "&FileGetVersion(@ScriptFullPath)&" (AutoIt "&@AutoItVersion&").")
+			WriteLineToConsole("   -h | -help :: Show this help")
+			WriteLineToConsole("   -port=[port] :: Set the port that will be used.  Default is 8777.")
+			WriteLineToConsole("   -key=[passphrase] | Sets the passphase that will be required to accept commands.")
+			WriteLineToConsole("   -keygen :: Gerate a passphrase that will be required to accept commands.")
+			WriteLineToConsole("   -keyshow :: Show the currently set passphrase that will be required to accept commands.")
+			Exit 0
+		elseif (StringInStr($cmd,"-port=")==1) Then
+			$Port=Number(stringmid($cmd,7))
+		elseif ($cmd="-keyshow") Then
+			WriteLineToConsole("The key (PassPhrase) is '"&$gSecKey&"'.")
+		elseif ($cmd="-keygen") Then
+			$gSecKey=uuid();
+			RegWrite("HKEY_CURRENT_USER\software\logic-worx\sewinium","key","REG_SZ",$gSecKey );
+			WriteLineToConsole("The key (PassPhrase) has been set to '"&$gSecKey&"'.")
+		elseif (StringInStr($cmd,"-key=")==1) Then
+			$gSecKey=stringmid($cmd,6);
+			RegWrite("HKEY_CURRENT_USER\software\logic-worx\sewinium","key","REG_SZ",$gSecKey );
+			WriteLineToConsole("The key (PassPhrase) has been set to '"&$gSecKey&"'.")
+		EndIf
+
+	Next
+
 EndIf
 
 WriteLineToConsole("Starting to create server..")
@@ -208,6 +248,7 @@ Func _Get_Post($s_Buffer)
 EndFunc
 
 func ExecutCommand($command, $sSocket)
+	; --- Seprate command and parameters.
 	$cmdEle = StringSplit($command,"?")
 	$func=$cmdEle[1]
 	$param=""
@@ -220,8 +261,21 @@ func ExecutCommand($command, $sSocket)
 		return
 	EndIf
 
+	; --- Validate Key
+
+	$params=buildParamArray($param);
+	$key=GetParamFromArray($params,"key");
+
+	if (@error<>0 or $key<> $gSecKey) Then
+		SendError(500, "You must specific the correct key (passphrase) as a parameter.", $Socket[$x]);
+		return
+	EndIf
+
+
+	; --- Call command
+
 	$func="WF"&StringLower(StringReplace($func,"/","_")); Map to funciton name and sub paths
-	$func=$func&"('"&$param&"',"&$sSocket&")"
+	$func=$func&"($params,"&$sSocket&")"
 
 
 	WriteLineToConsole("------------------------")
@@ -286,6 +340,15 @@ Func URIDecode($sData)
     Return BinaryToString(StringToBinary($aData[1],1),4)
 EndFunc
 
+Func uuid()
+    Return StringFormat('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', _
+            Random(0, 0xffff), Random(0, 0xffff), _
+            Random(0, 0xffff), _
+            BitOR(Random(0, 0x0fff), 0x4000), _
+            BitOR(Random(0, 0x3fff), 0x8000), _
+            Random(0, 0xffff), Random(0, 0xffff), Random(0, 0xffff) _
+        )
+EndFunc
 
 
 ; *********************** Basiuc Functions *****************
@@ -307,7 +370,7 @@ EndFunc
 
 func WF_debug_paramtest($params, $sSocket)
 
-	$params=buildParamArray($params);
+	;$params=buildParamArray($params);
 
 	$html="<body><h1>Parameter Decoding Tester</h1><p><ul>"
 
@@ -327,7 +390,7 @@ EndFunc
 
 func WF_debug_paramtest_findwindowparam($params, $sSocket)
 
-	$params=buildParamArray($params);
+	;$params=buildParamArray($params);
 
 	$html="<body><h1>Parameter Decoding Tester</h1><p><ul>"
 
