@@ -181,6 +181,8 @@ func WF_window_move($params, $sSocket)
 
 EndFunc
 
+;---- Resixe Window
+
 func WF_window_size($params, $sSocket)
 
 	;$params=buildParamArray($params); -- Decode Parmes
@@ -197,7 +199,7 @@ func WF_window_size($params, $sSocket)
 
 
 	if (not WinExists($handle)) Then
-		SendJSONResponse("Window/Move :: "&$class& "/ Handle: "&$handle,"Failed","Window not located.","",$sSocket)
+		SendJSONResponse("Window/Size :: "&$class& "/ Handle: "&$handle,"Failed","Window not located.","",$sSocket)
 		Return
 	EndIf
 
@@ -209,13 +211,13 @@ func WF_window_size($params, $sSocket)
 	$winH=Number(GetParamFromArray($params,"height"))
 
 	if ($winW<10 or $winH<10) then
-		SendJSONResponse("Window/MSize :: "&$class& "/ Handle: "&$handle,"Failed","Window cannot sized smaller than 10px x 10px.","",$sSocket)
+		SendJSONResponse("Window/Size :: "&$class& "/ Handle: "&$handle,"Failed","Window cannot sized smaller than 10px x 10px.","",$sSocket)
 		Return
 	Else
 		WinMove(HWnd($handle),"",$winX,$winY,$winW,$winH)
 
 		$json="'x':'"&$winX&"', 'y':'"&$winY&"', 'w':'"&$winW&"', 'h':'"&$winH&"'"
-		SendJSONResponse("Window/Move :: "&$class& "/ Handle: "&$handle,"OK","Window Resized.",$json,$sSocket)
+		SendJSONResponse("Window/Size :: "&$class& "/ Handle: "&$handle,"OK","Window Resized.",$json,$sSocket)
 	endif
 
 
@@ -224,4 +226,364 @@ func WF_window_size($params, $sSocket)
 
 EndFunc
 
+;--- Minimize all windows.
+
+func WF_window_minimizeall($params, $sSocket)
+
+	WinMinimizeAll()
+	SendJSONResponse("Window/MinimizeAll","OK","All Windows Minimised.","",$sSocket)
+EndFunc
+
+
+;--- Minimize all windows.
+
+func WF_window_undominimizeall($params, $sSocket)
+
+	WinMinimizeAllUndo()
+	SendJSONResponse("Window/UndoMinimizeAll","OK","Attempted to reverese last [All Windows Minimised].","",$sSocket)
+EndFunc
+
+;--- Minimize a window.
+
+func WF_window_minimize($params, $sSocket)
+
+	;$params=buildParamArray($params); -- Decode Parmes
+
+	$handle=0
+	$class=""
+
+	$handle = win_getHWND($params)
+
+	if (@error==-1 or $handle==0) Then
+		$class=win_buildClassFromParams($params)
+		$handle=WinGetHandle($class)
+	EndIf
+
+
+	if (not WinExists($handle)) Then
+		SendJSONResponse("Window/Minimize :: "&$class& "/ Handle: "&$handle,"Failed","Window not located.","",$sSocket)
+		Return
+	EndIf
+
+	WinSetState(HWnd($handle),"",@SW_MINIMIZE)
+
+	$json=""
+	SendJSONResponse("Window/Minimize :: "&$class& "/ Handle: "&$handle,"OK","Window Minmized",$json,$sSocket)
+EndFunc
+
+;--- Maximize a window.
+
+func WF_window_maximize($params, $sSocket)
+
+	;$params=buildParamArray($params); -- Decode Parmes
+
+	$handle=0
+	$class=""
+
+	$handle = win_getHWND($params)
+
+	if (@error==-1 or $handle==0) Then
+		$class=win_buildClassFromParams($params)
+		$handle=WinGetHandle($class)
+	EndIf
+
+
+	if (not WinExists($handle)) Then
+		SendJSONResponse("Window/Maximize :: "&$class& "/ Handle: "&$handle,"Failed","Window not located.","",$sSocket)
+		Return
+	EndIf
+
+	WinSetState(HWnd($handle),"",@SW_MAXIMIZE)
+
+	$json=""
+	SendJSONResponse("Window/Maximize :: "&$class& "/ Handle: "&$handle,"OK","Window Maximized",$json,$sSocket)
+EndFunc
+
+
+;--- Hide a window.
+
+func WF_window_hide($params, $sSocket)
+
+	;$params=buildParamArray($params); -- Decode Parmes
+
+	$handle=0
+	$class=""
+
+	$handle = win_getHWND($params)
+
+	if (@error==-1 or $handle==0) Then
+		$class=win_buildClassFromParams($params)
+		$handle=WinGetHandle($class)
+	EndIf
+
+
+	if (not WinExists($handle)) Then
+		SendJSONResponse("Window/Hide :: "&$class& "/ Handle: "&$handle,"Failed","Window not located.","",$sSocket)
+		Return
+	EndIf
+
+	WinSetState(HWnd($handle),"",@SW_HIDE)
+
+	$json=""
+	SendJSONResponse("Window/Maximize :: "&$class& "/ Handle: "&$handle,"OK","Window hidden",$json,$sSocket)
+EndFunc
+
+;--- Show a window.
+
+func WF_window_show($params, $sSocket)
+
+	;$params=buildParamArray($params); -- Decode Parmes
+
+	$handle=0
+	$class=""
+
+	$handle = win_getHWND($params)
+
+	if (@error==-1 or $handle==0) Then
+		$class=win_buildClassFromParams($params)
+		$handle=WinGetHandle($class)
+	EndIf
+
+
+	if (not WinExists($handle)) Then
+		SendJSONResponse("Window/Show :: "&$class& "/ Handle: "&$handle,"Failed","Window not located.","",$sSocket)
+		Return
+	EndIf
+
+	WinSetState(HWnd($handle),"",@SW_SHOW)
+
+	$json=""
+	SendJSONResponse("Window/Show :: "&$class& "/ Handle: "&$handle,"OK","Window shown",$json,$sSocket)
+EndFunc
+
+
+;--- Restore a window.
+
+func WF_window_restore($params, $sSocket)
+
+	;$params=buildParamArray($params); -- Decode Parmes
+
+	$handle=0
+	$class=""
+
+	$handle = win_getHWND($params)
+
+	if (@error==-1 or $handle==0) Then
+		$class=win_buildClassFromParams($params)
+		$handle=WinGetHandle($class)
+	EndIf
+
+
+	if (not WinExists($handle)) Then
+		SendJSONResponse("Window/Restore :: "&$class& "/ Handle: "&$handle,"Failed","Window not located.","",$sSocket)
+		Return
+	EndIf
+
+	WinSetState(HWnd($handle),"",@SW_RESTORE)
+
+	$json=""
+	SendJSONResponse("Window/Restore :: "&$class& "/ Handle: "&$handle,"OK","Window restored",$json,$sSocket)
+EndFunc
+
+;--- Activate a window.
+
+func WF_window_activate($params, $sSocket)
+
+	;$params=buildParamArray($params); -- Decode Parmes
+
+	$handle=0
+	$class=""
+
+	$handle = win_getHWND($params)
+
+	if (@error==-1 or $handle==0) Then
+		$class=win_buildClassFromParams($params)
+		$handle=WinGetHandle($class)
+	EndIf
+
+
+	if (not WinExists($handle)) Then
+		SendJSONResponse("Window/Activate :: "&$class& "/ Handle: "&$handle,"Failed","Window not located.","",$sSocket)
+		Return
+	EndIf
+
+	$res=WinActivate(HWnd($handle))
+
+	if ($res==0) Then
+
+		SendJSONResponse("Window/Activate :: "&$class& "/ Handle: "&$handle,"Failed","Window could not be activated.","",$sSocket)
+		Return
+
+	EndIf
+
+	$json=""
+	SendJSONResponse("Window/Activate :: "&$class& "/ Handle: "&$handle,"OK","Window activated",$json,$sSocket)
+EndFunc
+
+;--- Kill a window.
+
+func WF_window_kill($params, $sSocket)
+
+	;$params=buildParamArray($params); -- Decode Parmes
+
+	$handle=0
+	$class=""
+
+	$handle = win_getHWND($params)
+
+	if (@error==-1 or $handle==0) Then
+		$class=win_buildClassFromParams($params)
+		$handle=WinGetHandle($class)
+	EndIf
+
+
+	if (not WinExists($handle)) Then
+		SendJSONResponse("Window/Kill :: "&$class& "/ Handle: "&$handle,"Failed","Window not located.","",$sSocket)
+		Return
+	EndIf
+
+	$res=WinKill(HWnd($handle))
+
+
+	$json=""
+	SendJSONResponse("Window/Kill :: "&$class& "/ Handle: "&$handle,"OK","Window killed (Forced)",$json,$sSocket)
+EndFunc
+
+;--- Close a window.
+
+func WF_window_close($params, $sSocket)
+
+	;$params=buildParamArray($params); -- Decode Parmes
+
+	$handle=0
+	$class=""
+
+	$handle = win_getHWND($params)
+
+	if (@error==-1 or $handle==0) Then
+		$class=win_buildClassFromParams($params)
+		$handle=WinGetHandle($class)
+	EndIf
+
+
+	if (not WinExists($handle)) Then
+		SendJSONResponse("Window/Close :: "&$class& "/ Handle: "&$handle,"Failed","Window not located.","",$sSocket)
+		Return
+	EndIf
+
+	WinClose(HWnd($handle))
+
+	$json=""
+	SendJSONResponse("Window/Close :: "&$class& "/ Handle: "&$handle,"OK","Window Closed",$json,$sSocket)
+EndFunc
+
+
+;--- Wait for Close of window.
+
+func WF_window_waitclose($params, $sSocket)
+
+	$stimeout = GetParamFromArray($params,"timeout")
+
+	$timeout=5 ; -- default timeout
+
+	if (@error==0 and StringIsInt($stimeout)) Then
+		$timeout=number($stimeout)
+	EndIf
+
+	;$params=buildParamArray($params); -- Decode Parmes
+
+	$handle=0
+	$class=""
+
+	$handle = win_getHWND($params)
+
+	if (@error==-1 or $handle==0) Then
+		$class=win_buildClassFromParams($params)
+		$handle=WinGetHandle($class)
+	EndIf
+
+
+	$res=WinWaitClose(HWnd($handle),"",$timeout)
+
+	if ($res==0) Then
+		SendJSONResponse("Window/WaitClose :: "&$class& "/ Handle: "&$handle,"Failed","Window still exists after "&$timeout&" seconds.","",$sSocket)
+		Return
+	EndIf
+
+	$json=""
+	SendJSONResponse("Window/WaitClose :: "&$class& "/ Handle: "&$handle,"OK","Window closed/does not exist.",$json,$sSocket)
+EndFunc
+
+
+;--- Wait for window.
+
+func WF_window_wait($params, $sSocket)
+
+	$stimeout = GetParamFromArray($params,"timeout")
+
+	$timeout=5 ; -- default timeout
+
+	if (@error==0 and StringIsInt($stimeout)) Then
+		$timeout=number($stimeout)
+	EndIf
+
+	;$params=buildParamArray($params); -- Decode Parmes
+
+	$handle=0
+	$class=""
+
+	$handle = win_getHWND($params)
+
+	if (@error==-1 or $handle==0) Then
+		$class=win_buildClassFromParams($params)
+		$handle=WinGetHandle($class)
+	EndIf
+
+
+	$res= WinWait(HWnd($handle),"",$timeout)
+
+	if ($res==0) Then
+		SendJSONResponse("Window/Wait :: "&$class& "/ Handle: "&$handle,"Failed","Window does not exists after "&$timeout&" seconds.","",$sSocket)
+		Return
+	EndIf
+
+	$json=""
+	SendJSONResponse("Window/Wait :: "&$class& "/ Handle: "&$handle,"OK","Window exists.",$json,$sSocket)
+EndFunc
+
+;--- Wait for window to be active.
+
+func WF_window_waitactive($params, $sSocket)
+
+	$stimeout = GetParamFromArray($params,"timeout")
+
+	$timeout=5 ; -- default timeout
+
+	if (@error==0 and StringIsInt($stimeout)) Then
+		$timeout=number($stimeout)
+	EndIf
+
+	;$params=buildParamArray($params); -- Decode Parmes
+
+	$handle=0
+	$class=""
+
+	$handle = win_getHWND($params)
+
+	if (@error==-1 or $handle==0) Then
+		$class=win_buildClassFromParams($params)
+		$handle=WinGetHandle($class)
+	EndIf
+
+
+	$res=WinWait(HWnd($handle),"",$timeout)
+
+	if ($res==0) Then
+		SendJSONResponse("Window/WaitActive :: "&$class& "/ Handle: "&$handle,"Failed","Window does not exists or is not active after "&$timeout&" seconds","",$sSocket)
+		Return
+	EndIf
+
+	$json=""
+	SendJSONResponse("Window/WaitActive :: "&$class& "/ Handle: "&$handle,"OK","Window Active.",$json,$sSocket)
+EndFunc
 

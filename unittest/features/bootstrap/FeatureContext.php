@@ -32,13 +32,26 @@ class FeatureContext extends MinkContext
         //$pageText= $page->getText();
         $pageText=$this->getSession()->getDriver()->getContent();
 
-
-        preg_match_all('/\"'.$prop.'\"\s{0,1}\:\s{0,1}\"'.$text.'\"/',$pageText,$matches);
+        preg_match_all('/\"'.$prop.'\"\s{0,1}\:/',$pageText,$matches);
 
         if ($matches===false || count($matches[0])==0)
         {
-            throw new \Exception("Could not find property '".$prop."' or the value did match '".$text."'.\r\n".$pageText."\r\n");
+            throw new \Exception("Could not find property '".$prop."'.\r\n".$pageText."\r\n");
         }
+
+
+        preg_match_all('/\"'.$prop.'\"\s{0,1}\:\s{0,1}\"(.*?)\"/',$pageText,$matches);
+
+        if ($matches===false || count($matches[0])==0)
+        {
+            throw new \Exception("The value of '".$prop."' could not be found.'.\r\n".$pageText."\r\n");
+        }
+
+        if ($matches[1][0]!==$text)
+        {
+            throw new \Exception("The value of '".$prop."' was not '".$text."'. Property contained '".$matches[1][0]."'.\r\n".$pageText."\r\n");
+        }
+
 
         //var_dump($matches);
 
