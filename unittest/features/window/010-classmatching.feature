@@ -1,4 +1,4 @@
-Feature: Testing Basic Widnow GUI Control Class matching by usnign window find.
+Feature: Testing Basic Window GUI Control Class matching by using window find.
 
 Scenario: Verify [absolute title] is working.
 	Given I go to "http://127.0.0.1:8777/window/find?key=unit-test-12345&title=Untitled%20-%20Notepad"

@@ -1,2 +1,2 @@
 cls
-sewinium -keyshow -port=8887
+sewinium -keyshow -port=8777
