@@ -3,7 +3,7 @@
 #AutoIt3Wrapper_UseX64=y
 #AutoIt3Wrapper_Change2CUI=y
 #AutoIt3Wrapper_Res_Description=seWINium Test Driver
-#AutoIt3Wrapper_Res_Fileversion=0.0.0.31
+#AutoIt3Wrapper_Res_Fileversion=0.0.0.32
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_LegalCopyright=(c) 2017 logic-worx.com
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****

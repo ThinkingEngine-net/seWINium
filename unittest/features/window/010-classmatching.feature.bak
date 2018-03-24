@@ -33,7 +33,7 @@ Scenario: Verify [window size] is working.
 	And the property "title" in the JSON matches "Untitled - Notepad"
 
 Scenario: Verify [instance] is working by failure.
-	Given I go to "http://127.0.0.1:8777/window/find?key=unit-test-12345&title=Untitled%20-%20Notepad&instance=10"
+	Given I go to "http://127.0.0.1:8777/window/find?key=unit-test-12345&title=Untitled%20-%20Notepad&instance=2"
 	Then the property "status" in the JSON matches "Failed"
 
 Scenario: Verify [RegEx Title] is working.

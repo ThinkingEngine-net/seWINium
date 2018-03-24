@@ -83,9 +83,9 @@ class FeatureContext extends MinkContext
             throw new \Exception("The value of '".$prop."' could not be found.'.\r\n".$pageText."\r\n");
         }
 
-        if (strpos($matches[1][0],$text)===false)
+        if (strpos($matches[1][0],$text)==false)
         {
-            throw new \Exception("The value of '".$prop."' did not contain '".$text."'. Property contained '".$matches[1][0]."'.\r\n".$pageText."\r\n");
+            throw new \Exception("The value of '".$prop."' did notcontain '".$text."'. Property contained '".$matches[1][0]."'.\r\n".$pageText."\r\n");
         }
 
 

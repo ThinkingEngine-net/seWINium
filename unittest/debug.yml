@@ -1,0 +1,14 @@
+default:
+    suites:
+        Debug:
+            paths: [ %paths.base%/features/debug/]
+            contexts: [ FeatureContext ]
+
+    extensions:
+        Behat\MinkExtension:
+            base_url:  '' # Here we need to specify URL of test server
+            sessions:
+                default:
+                    goutte: ~
+                
+        

@@ -655,7 +655,9 @@ func WF_window_hastext($params, $sSocket)
 	EndIf
 
 
-	$json=""
+	$title = WinGetTitle($handle)
+
+	$json="'handle':'"&$handle&"','title':'"&$title&"'"
 	SendJSONResponse("Window/HasText :: "&$class& "/ Handle: "&$handle&" has text containg ["&$txt&"] found." ,"OK","Window Has Text.",$json,$sSocket)
 EndFunc
 
