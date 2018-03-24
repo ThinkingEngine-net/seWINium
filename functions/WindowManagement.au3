@@ -95,6 +95,41 @@ func WF_window_find($params, $sSocket)
 
 EndFunc
 
+;---- Locate Window By Text
+
+; ----- Locate a window
+
+func WF_window_find_text($params, $sSocket)
+
+	;$params=buildParamArray($params); -- Decode Parmes
+
+	$class=win_buildClassFromParams($params)
+
+	if ($class=="[]") Then ; --- No class to search
+		$class=""
+	EndIf
+
+	$txt=GetParamFromArray($params,"wintext")
+	if (@error<>0) Then
+		SendJSONResponse("Window/Find/Text","Failed","You must specify the text to search for in [wintex].","",$sSocket)
+		return
+	EndIf
+
+	$handle=WinGetHandle($class);
+
+	if (@error<>0) Then
+		SendJSONResponse("Window/Find/Text :: "&$class&" + text :: ["&$txt&"]","Failed","Window not located.","",$sSocket)
+		Return
+	EndIf
+
+	$title = WinGetTitle($handle)
+
+	$json="'handle':'"&$handle&"','title':'"&$title&"'"
+	SendJSONResponse("Window/Find :: "&$class&" + text :: ["&$txt&"]","OK","",$json,$sSocket)
+
+
+EndFunc
+
 
 ; ----- Flash window
 
@@ -587,3 +622,64 @@ func WF_window_waitactive($params, $sSocket)
 	SendJSONResponse("Window/WaitActive :: "&$class& "/ Handle: "&$handle,"OK","Window Active.",$json,$sSocket)
 EndFunc
 
+
+func WF_window_hastext($params, $sSocket)
+
+	$txt = GetParamFromArray($params,"text")
+	if (@error<>0) Then
+		SendJSONResponse("Window/HasText","Failed","You must specify the text to search for in [text].","",$sSocket)
+		return
+	EndIf
+
+	$handle=0
+	$class=""
+
+	$handle = win_getHWND($params)
+
+	if (@error==-1 or $handle==0) Then
+		$class=win_buildClassFromParams($params)
+		$handle=WinGetHandle($class)
+	EndIf
+
+
+	$res=WinGetText(HWnd($handle),"")
+
+	if ($res=="") Then
+		SendJSONResponse("Window/HasText :: "&$class& "/ Handle: "&$handle,"Failed","Window does not exists or has no text","",$sSocket)
+		Return
+	EndIf
+
+	if (StringInStr(StringLower($res), StringLower($txt)) == 0) Then
+		SendJSONResponse("Window/HasText","Failed","Text ["&$txt&"] could not be found.","",$sSocket)
+		return
+	EndIf
+
+
+	$json=""
+	SendJSONResponse("Window/HasText :: "&$class& "/ Handle: "&$handle&" has text containg ["&$txt&"] found." ,"OK","Window Has Text.",$json,$sSocket)
+EndFunc
+
+func WF_window_gettext($params, $sSocket)
+
+	$handle=0
+	$class=""
+
+	$handle = win_getHWND($params)
+
+	if (@error==-1 or $handle==0) Then
+		$class=win_buildClassFromParams($params)
+		$handle=WinGetHandle($class)
+	EndIf
+
+
+	$res=WinGetText(HWnd($handle),"")
+
+	if ($res=="") Then
+		SendJSONResponse("Window/GetText :: "&$class& "/ Handle: "&$handle,"Failed","Window does not exists or has no text","",$sSocket)
+		Return
+	EndIf
+
+
+	$json="'text':'"&URIEncode($res)&"'"
+	SendJSONResponse("Window/GetText :: "&$class& "/ Handle: "&$handle&" text found." ,"OK","Window Get Text.",$json,$sSocket)
+EndFunc

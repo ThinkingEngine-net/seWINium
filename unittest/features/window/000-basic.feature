@@ -59,3 +59,27 @@ Scenario: Verify [Activate Window] is working.
 	Given I go to "http://127.0.0.1:8777/window/waitactive?key=unit-test-12345&title=Untitled%20-%20Notepad&timeout=2"
 	Then the property "status" in the JSON matches "OK"
 	And the property "message" in the JSON matches "Window Active."
+
+Scenario: Verify [find window by text] is working by searching for NotePad and About Notepad
+	Given I go to "http://127.0.0.1:8777/window/find/text?key=unit-test-12345&title=Untitled%20-%20Notepad&wintext=About%20Notepad"
+	Then the property "status" in the JSON matches "OK"
+	And the property "title" in the JSON matches "Untitled - Notepad"
+
+Scenario: Verify [find window by text] is working by searching for About Notepad
+	Given I go to "http://127.0.0.1:8777/window/find/text?key=unit-test-12345&wintext=About%20Notepad"
+	Then the property "status" in the JSON matches "OK"
+	And the property "title" in the JSON matches "Untitled - Notepad"
+
+Scenario: Verify [find window by text] fails if wintext not sent
+	Given I go to "http://127.0.0.1:8777/window/find/text?key=unit-test-12345&title=Untitled%20-%20Notepad"
+	Then the property "status" in the JSON matches "Failed"
+
+Scenario: Verify [window has text] is working by searching for About Notepad
+	Given I go to "http://127.0.0.1:8777/window/hastext?key=unit-test-12345&text=About%20Notepad&title=Untitled%20-%20Notepad"
+	Then the property "status" in the JSON matches "OK"
+	And the property "title" in the JSON matches "Untitled - Notepad"
+
+Scenario: Verify I can retrieve the window text
+	Given I go to "http://127.0.0.1:8777/window/gettext?key=unit-test-12345&title=Untitled%20-%20Notepad"
+	Then the property "status" in the JSON matches "OK"
+	And the property "text" in the JSON matches ".*About\sNotepad*"

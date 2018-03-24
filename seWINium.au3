@@ -3,7 +3,7 @@
 #AutoIt3Wrapper_UseX64=y
 #AutoIt3Wrapper_Change2CUI=y
 #AutoIt3Wrapper_Res_Description=seWINium Test Driver
-#AutoIt3Wrapper_Res_Fileversion=0.0.0.25
+#AutoIt3Wrapper_Res_Fileversion=0.0.0.31
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_LegalCopyright=(c) 2017 logic-worx.com
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
@@ -340,6 +340,26 @@ Func URIDecode($sData)
     Return BinaryToString(StringToBinary($aData[1],1),4)
 EndFunc
 
+
+
+Func URIEncode($urlText)
+    $url = ""
+    For $i = 1 To StringLen($urlText)
+        $acode = Asc(StringMid($urlText, $i, 1))
+        Select
+            Case ($acode >= 48 And $acode <= 57) Or _
+                    ($acode >= 65 And $acode <= 90) Or _
+                    ($acode >= 97 And $acode <= 122)
+                $url = $url & StringMid($urlText, $i, 1)
+            Case $acode = 32
+                $url = $url & "+"
+            Case Else
+                $url = $url & "%" & Hex($acode, 2)
+        EndSelect
+    Next
+    Return $url
+EndFunc   ;==>URLEncode
+
 Func uuid()
     Return StringFormat('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', _
             Random(0, 0xffff), Random(0, 0xffff), _
@@ -417,3 +437,4 @@ EndFunc
 ; ---------------------------- Function Librabries
 
 #include "functions\WindowManagement.au3"
+#include "functions\Registry.au3"

@@ -4,9 +4,15 @@ default:
             paths: [ %paths.base%/features/core/]
             contexts: [ FeatureContext ]
 
+        Registry:
+            paths: [ %paths.base%/features/registry/]
+            contexts: [ FeatureContext ]
+
+        # always last
         WindowManagement:
             paths: [ %paths.base%/features/window/]
             contexts: [ FeatureContext ]
+        
 
     extensions:
         Behat\MinkExtension:
