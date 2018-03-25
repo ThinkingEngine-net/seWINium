@@ -13,6 +13,25 @@
 #ce ----------------------------------------------------------------------------
 
 
+func ini_has_section($file, $section)
+
+	Local $aArray = IniReadSectionNames($file)
+
+	if (@error) Then
+		return false
+	EndIf
+
+	For $i = 1 To $aArray[0]
+		if (StringLower($aArray[$i])==StringLower($section)) Then
+
+			return true
+
+		EndIf
+	Next
+
+	return False
+
+EndFunc
 
 
 
@@ -24,57 +43,52 @@
 	Driver Functions
 #ce ----------------------------------------------------------------------------
 
-; ----- Locate a window
+; ----- Read Ini Key
 
-func WF_registry_read($params, $sSocket)
+func WF_ini_read($params, $sSocket)
 
 	$file = GetParamFromArray($params,"ini")
 	if (@error<>0) Then
-		SendJSONResponse("registry/read","Failed","Registry key is invalid.","",$sSocket)
+		SendJSONResponse("ini/read","Failed","ini filename is invalid.","",$sSocket)
 		Return
 	EndIf
 
-	$key = GetParamFromArray($params,"key")
+	$section = GetParamFromArray($params,"section")
 	if (@error<>0) Then
-		SendJSONResponse("registry/read","Failed","Registry key is invalid.","",$sSocket)
+		SendJSONResponse("ini/read","Failed","section is invalid.","",$sSocket)
 		Return
 	EndIf
 
-
-	$val = GetParamFromArray($params,"inivalue")
+	$key = GetParamFromArray($params,"inikey")
 	if (@error<>0) Then
-		SendJSONResponse("registry/read","Failed","Registry value is invalid.","",$sSocket)
+		SendJSONResponse("ini/read","Failed","inikey is invalid.","",$sSocket)
 		Return
 	EndIf
 
 
-	$data = RegRead($key, $val)
-
-	$err=@error
-
-	if ($err==1 or $err==2) Then
-		SendJSONResponse("registry/read","Failed","Registry key ["&$key&"] is not found.","",$sSocket)
+	if (not FileExists($file)) Then
+		SendJSONResponse("ini/read","Failed","Ini file does not exist.","",$sSocket)
 		Return
 	EndIf
 
-	if ($err==3) Then
-		SendJSONResponse("registry/read","Failed","Remote access to ["&$key&"] failed.","",$sSocket)
+
+	if (not ini_has_section($file, $section)) Then
+		SendJSONResponse("ini/read","Failed","Ini section does not exist.","",$sSocket)
 		Return
 	EndIf
 
-	if ($err==-1) Then
-		SendJSONResponse("registry/read","Failed","Registry Value ["&$val&"] not fouund in ["&$key&"].","",$sSocket)
+	$data = iniRead($file,$section,$key, "$$$-%%--NotFound--%%-$$$")
+
+
+	if ($data=="$$$-%%--NotFound--%%-$$$") Then
+		SendJSONResponse("ini/read","Failed","Ini file does not have key.","",$sSocket)
 		Return
 	EndIf
 
-	if ($err==-2) Then
-		SendJSONResponse("registry/read","Failed","Type not supported for registry Value ["&$val&"] not fouund in ["&$key&"].","",$sSocket)
-		Return
-	EndIf
 
 	$Type=VarGetType($data)
 	$sData=""&$data
 
-	SendJSONResponse("registry/read","OK","Read registry Value ["&$val&"] in ["&$key&"].","'type':'"&$Type&"', 'value':'"&$sData&"'",$sSocket)
+	SendJSONResponse("ini/read","OK","Read ini key ["&$key&"] in ["&$section&"].","'type':'"&$Type&"', 'value':'"&$sData&"'",$sSocket)
 
 EndFunc

@@ -7,10 +7,6 @@ default:
         Registry:
             paths: [ %paths.base%/features/registry/]
             contexts: [ FeatureContext ]
-        
-        Ini:
-            paths: [ %paths.base%/features/ini/]
-            contexts: [ FeatureContext ]
 
         # always last
         WindowManagement:
