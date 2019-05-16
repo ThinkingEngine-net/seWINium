@@ -52,6 +52,33 @@ func win_buildClassFromParams($params)
 
 EndFunc
 
+func win_getPropsJson($handle)
+	$title = WinGetTitle($handle)
+	$class= _WinAPI_GetClassName($handle)
+	$classes = StringReplace(WinGetClassList($Handle),@LF,"|")
+	$loc = WinGetPos($Handle)
+	$vState = WinGetState($Handle)
+
+	$pid = WinGetProcess($Handle)
+
+
+	$json="'handle':'"&$handle&"','hwnd':"&Number($handle)&",'title':'"&JSONEncode($title)&"','internalClasses':'"&JSONEncode($classes)&"','className':'"&JSONEncode($class)&"'"
+	$json &= ",'width':"&$loc[2]&", 'height':"&$loc[3];
+	$json &= ",'X':"&$loc[0]&", 'Y':"&$loc[1];
+
+	$json&= ",'process':" & $pid;
+
+	$json&= ",'exists':" &Bool2String(BitAND($vState, 1));
+	$json&= ",'visible':" &Bool2String(BitAND($vState, 2));
+	$json&= ",'enabled':" &Bool2String(BitAND($vState, 4));
+	$json&= ",'active':" &Bool2String(BitAND($vState, 8));
+	$json&= ",'minimized':" &Bool2String(BitAND($vState, 16));
+	$json&= ",'maximised':" &Bool2String(BitAND($vState, 32));
+
+
+	return $json
+EndFunc
+
 func win_getHWND($params)
 
 	$handle = GetParamFromArray($params,"handle")
@@ -88,9 +115,44 @@ func WF_window_find($params, $sSocket)
 	EndIf
 
 	$title = WinGetTitle($handle)
+	$class= _WinAPI_GetClassName($handle)
+	$classes = StringReplace(WinGetClassList($Handle),@LF,"|")
+	$loc = WinGetPos($Handle)
+	$vState = WinGetState($Handle)
 
-	$json="'handle':'"&$handle&"','title':'"&$title&"'"
+	$pid = WinGetProcess($Handle)
+
+
+	$json=win_getPropsJson($Handle)
+
+
 	SendJSONResponse("Window/Find :: "&$class,"OK","",$json,$sSocket)
+
+
+EndFunc
+
+func WF_window_update($params, $sSocket)
+
+	$handle = win_getHWND($params)
+
+	if (@error<>0) Then
+		SendJSONResponse("Window/Update","Failed","Window not located.","",$sSocket)
+		Return
+	EndIf
+
+	$title = WinGetTitle($handle)
+	$class= _WinAPI_GetClassName($handle)
+	$classes = StringReplace(WinGetClassList($Handle),@LF,"|")
+	$loc = WinGetPos($Handle)
+	$vState = WinGetState($Handle)
+
+	$pid = WinGetProcess($Handle)
+
+
+	$json=win_getPropsJson($Handle)
+
+
+	SendJSONResponse("Window/Update :: "&$class,"OK","",$json,$sSocket)
 
 
 EndFunc
@@ -117,14 +179,8 @@ func WF_window_find_text($params, $sSocket)
 
 	$handle=WinGetHandle($class);
 
-	if (@error<>0) Then
-		SendJSONResponse("Window/Find/Text :: "&$class&" + text :: ["&$txt&"]","Failed","Window not located.","",$sSocket)
-		Return
-	EndIf
 
-	$title = WinGetTitle($handle)
-
-	$json="'handle':'"&$handle&"','title':'"&$title&"'"
+	$json=win_getPropsJson($handle)
 	SendJSONResponse("Window/Find :: "&$class&" + text :: ["&$txt&"]","OK","",$json,$sSocket)
 
 
@@ -571,11 +627,11 @@ func WF_window_wait($params, $sSocket)
 
 	if (@error==-1 or $handle==0) Then
 		$class=win_buildClassFromParams($params)
-		$handle=WinGetHandle($class)
+		;$handle=WinGetHandle($class)
 	EndIf
 
 
-	$res= WinWait(HWnd($handle),"",$timeout)
+	$res= WinWait($class,"",$timeout)
 
 	if ($res==0) Then
 		SendJSONResponse("Window/Wait :: "&$class& "/ Handle: "&$handle,"Failed","Window does not exists after "&$timeout&" seconds.","",$sSocket)

@@ -1,0 +1,4 @@
+Commands will be logged to 'test.txt'.
+The key (PassPhrase) is 'unit-test-12345'.
+Starting to create server..
+Listening on 127.0.0.1:8777

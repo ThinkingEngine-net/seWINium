@@ -3,10 +3,13 @@
 #AutoIt3Wrapper_UseX64=y
 #AutoIt3Wrapper_Change2CUI=y
 #AutoIt3Wrapper_Res_Description=seWINium Test Driver
-#AutoIt3Wrapper_Res_Fileversion=0.0.0.38
+#AutoIt3Wrapper_Res_Fileversion=0.0.0.81
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
-#AutoIt3Wrapper_Res_LegalCopyright=(c) 2017 logic-worx.com
+#AutoIt3Wrapper_Res_LegalCopyright=(c) 2019 thinkingengine.net
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
+
+#include <WinAPI.au3>
+
 #cs ----------------------------------------------------------------------------
 
  Author:         Mark Marshall
@@ -15,13 +18,16 @@
 	Windows GUI Test Driver (HTP Driven)
 
 #ce ----------------------------------------------------------------------------
+Opt("TrayIconHide", 1) ;0=show, 1=hide tray icon
 
 ; --- Init
+Global $logFile ="" ; The file to log console too
 
 WriteLineToConsole("seWINium Windows GUI Test Driver")
 
 Dim $IP = "127.0.0.1" ; only on local host
 Dim $Port = 8777 ; the listening port
+
 
 ;--- Read Secuity Key (Passphrase)
 
@@ -35,6 +41,8 @@ EndIf
 
 ;--- Process Command Line
 
+$cmdShowKey=false;
+
 if ($CmdLine[0]>0) Then
 	for $n =1 to $CmdLine[0]
 		$cmd = StringLower($CmdLine[$n])
@@ -44,18 +52,28 @@ if ($CmdLine[0]>0) Then
 			WriteLineToConsole("Version "&FileGetVersion(@ScriptFullPath)&" (AutoIt "&@AutoItVersion&").")
 			WriteLineToConsole("   -h | -help :: Show this help")
 			WriteLineToConsole("   -port=[port] :: Set the port that will be used.  Default is 8777.")
-			WriteLineToConsole("   -key=[passphrase] | Sets the passphase that will be required to accept commands.")
-			WriteLineToConsole("   -keygen :: Gerate a passphrase that will be required to accept commands.")
+			WriteLineToConsole("   -key=[passphrase] | Sets the new permanent passphase that will be required to accept commands.")
+			WriteLineToConsole("   -keygen :: Generate a new permanent passphrase that will be required to accept commands.")
+			WriteLineToConsole("   -keygen-session :: Generate a temporary passphrase that will be required to accept commands for this session.")
 			WriteLineToConsole("   -keyshow :: Show the currently set passphrase that will be required to accept commands.")
+			WriteLineToConsole("   -log=""filename"":: Show the currently set passphrase that will be required to accept commands.")
 			Exit 0
 		elseif (StringInStr($cmd,"-port=")==1) Then
 			$Port=Number(stringmid($cmd,7))
+		elseif (StringInStr($cmd,"-log=")==1) Then
+			$logFile=stringmid($cmd,6)
+			$logFile=StringReplace($logFile,"""","")
+			FileDelete($logFile);
+			WriteLineToConsole("Commands will be logged to '"&$logFile&"'.")
 		elseif ($cmd="-keyshow") Then
-			WriteLineToConsole("The key (PassPhrase) is '"&$gSecKey&"'.")
+			$cmdShowKey=true;
 		elseif ($cmd="-keygen") Then
 			$gSecKey=uuid();
 			RegWrite("HKEY_CURRENT_USER\software\logic-worx\sewinium","key","REG_SZ",$gSecKey );
 			WriteLineToConsole("The key (PassPhrase) has been set to '"&$gSecKey&"'.")
+		elseif ($cmd="-keygen-session") Then
+			$gSecKey=uuid();
+			WriteLineToConsole("The key (PassPhrase) has been set to '"&$gSecKey&"' for this session.")
 		elseif (StringInStr($cmd,"-key=")==1) Then
 			$gSecKey=stringmid($cmd,6);
 			RegWrite("HKEY_CURRENT_USER\software\logic-worx\sewinium","key","REG_SZ",$gSecKey );
@@ -64,6 +82,10 @@ if ($CmdLine[0]>0) Then
 
 	Next
 
+EndIf
+
+if ($cmdShowKey=true) then
+	WriteLineToConsole("The key (PassPhrase) is '"&$gSecKey&"'.")
 EndIf
 
 WriteLineToConsole("Starting to create server..")
@@ -78,11 +100,17 @@ Dim $Socket[$Max_Users]
 Dim $Buffer[$Max_Users]
 $Socket[0] = -1
 
-TCPStartup()
+$res=TCPStartup()
+
+If $res=0 Then
+    WriteLineToConsole("Unable to start TCP. Error #"&@error&". Shutting Down...")
+    Exit
+EndIf
+
 
 $MainSocket = TCPListen($IP,$Port) ;create main listening socket
 If @error Then
-    WriteLineToConsole("Unable to create a socket on port " & $Port & ". Shutting Down...")
+    WriteLineToConsole("Unable to create a socket on port " &$IP&":"&$Port & ". Error #"&@error&". Shutting Down...")
     Exit
 EndIf
 WriteLineToConsole("Listening on "&$IP&":"&$Port)
@@ -132,6 +160,9 @@ WEnd
 
 Func WriteLineToConsole($message)
 	ConsoleWrite($message&@CRLF);
+	if ($logFile<>"") Then
+		FileWriteLine($logFile, $message)
+	EndIf
 EndFunc
 
 Func SendJSONResponse($command,$status, $message,$rawJSON,$sSocket)
@@ -360,6 +391,22 @@ Func URIEncode($urlText)
     Return $url
 EndFunc   ;==>URLEncode
 
+Func JSONEncode($JsonVarText)
+    $json = ""
+    For $i = 1 To StringLen($JsonVarText)
+        $acode = Asc(StringMid($JsonVarText, $i, 1))
+        Select
+           Case $acode = 92
+                $json = $json & "\\"
+            Case $acode = 34
+                $json = $json & "\"""
+            Case Else
+                $json = $json & StringMid($JsonVarText, $i, 1)
+        EndSelect
+    Next
+    Return $json
+EndFunc   ;==>JSONEncode
+
 Func uuid()
     Return StringFormat('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', _
             Random(0, 0xffff), Random(0, 0xffff), _
@@ -434,8 +481,20 @@ func WF_debug_paramtest_findwindowparam($params, $sSocket)
 
 EndFunc
 
+;-------------- Convert Bool to string
+
+func Bool2String($bool)
+
+
+	If $bool then return "true";
+	return "false";
+
+EndFunc
+
+
 ; ---------------------------- Function Librabries
 
 #include "functions\WindowManagement.au3"
 #include "functions\Registry.au3"
 #include "functions\ini.au3"
+#include "functions\ControlManagement.au3"
