@@ -741,3 +741,122 @@ func WF_window_gettext($params, $sSocket)
 	$json="'text':'"&URIEncode($res)&"'"
 	SendJSONResponse("Window/GetText :: "&$class& "/ Handle: "&$handle&" text found." ,"OK","Window Get Text.",$json,$sSocket)
 EndFunc
+
+
+func WF_window_activatetypekeys($params, $sSocket)
+
+	;$params=buildParamArray($params); -- Decode Parmes
+
+	$class=ctrl_buildClassFromParams($params)
+
+	$winHandle=win_getHWND($params);;
+
+
+	if (@error<>0) Then
+		SendJSONResponse("Window/ActivateTypeKeys :: ","Failed","Window not located.","",$sSocket)
+		Return
+	EndIf
+
+	WinActivate($winHandle,"");
+
+	$sTxt = GetParamFromArray($params,"keys")
+
+
+	if (@error<>0) Then
+		SendJSONResponse("Window/ActivateTypeKeys ::","Failed","need to specify keys to type.","",$sSocket)
+		Return
+	EndIf
+
+	$ret = Send($sTxt)
+
+	if ($ret=0) Then
+		SendJSONResponse("Window/ActivateTypeKeys :: ","Failed","Typing failed.","",$sSocket)
+		Return
+	EndIf
+
+	SendJSONResponse("Window/ActivateTypeKeys :: ","OK","","",$sSocket)
+
+EndFunc
+
+func WF_window_typekeys($params, $sSocket)
+
+
+	$sTxt = GetParamFromArray($params,"keys")
+
+
+	if (@error<>0) Then
+		SendJSONResponse("Window/TypeKeys ::","Failed","need to specify keys to type.","",$sSocket)
+		Return
+	EndIf
+
+	$ret = Send($sTxt)
+
+	if ($ret=0) Then
+		SendJSONResponse("Window/TypeKeys :: ","Failed","Typing failed.","",$sSocket)
+		Return
+	EndIf
+
+	SendJSONResponse("Window/TypeKeys :: ","OK","","",$sSocket)
+
+EndFunc
+
+
+func WF_window_rawclick($params, $sSocket)
+
+	$butt = GetParamFromArray($params,"button")
+
+
+	if (@error<>0) Then
+		SendJSONResponse("Window/RawClick ::","Failed","need to specify a mouse button.","",$sSocket)
+		Return
+	EndIf
+
+	$sClicks = GetParamFromArray($params,"clicks")
+
+	$clicks =1
+
+	if (@error=0) Then
+
+		$clicks=Number($sClicks)
+
+	EndIf
+
+	$sX = GetParamFromArray($params,"x")
+	if (@error<>0) Then
+		SendJSONResponse("Window/RawClick ::","Failed","need to specify x.","",$sSocket)
+		Return
+	EndIf
+
+	$x = 0
+
+	if (@error=0) Then
+
+		$x=Number($sX)
+
+	EndIf
+
+	$sY = GetParamFromArray($params,"y")
+	if (@error<>0) Then
+		SendJSONResponse("Window/RawClick ::","Failed","need to specify y.","",$sSocket)
+		Return
+	EndIf
+
+	$y = 0
+
+	if (@error=0) Then
+
+		$y=Number($sY)
+
+	EndIf
+
+	$ret = MouseClick($butt,$x,$y,$clicks)
+
+
+	if ($ret=0) Then
+		SendJSONResponse("Control/RawClick :: ","Failed","control Click failed.","",$sSocket)
+		Return
+	EndIf
+
+	SendJSONResponse("Control/RawClick :: ","OK","","",$sSocket)
+
+EndFunc

@@ -141,7 +141,7 @@ func WF_control_focus($params, $sSocket)
 	$json=ctrl_getPropsJson($winHandle, $cttl)
 
 
-	SendJSONResponse("Control/Focus :: "&$class,"OK","",$json,$sSocket)
+	SendJSONResponse("Control/Focus :: ","OK","",$json,$sSocket)
 
 EndFunc
 
@@ -172,4 +172,195 @@ func WF_control_update($params, $sSocket)
 
 
 EndFunc
+
+func WF_control_setfocus($params, $sSocket)
+
+	;$params=buildParamArray($params); -- Decode Parmes
+
+	$class=ctrl_buildClassFromParams($params)
+
+	$winHandle=win_getHWND($params);;
+
+
+	if (@error<>0) Then
+		SendJSONResponse("Control/SetFocus :: ","Failed","Window not located.","",$sSocket)
+		Return
+	EndIf
+
+	$cttl = ctrl_getID ($params);;
+
+	if (@error<>0) Then
+		SendJSONResponse("Control/SetFocus ::"+$cttl,"Failed","control not located.","",$sSocket)
+		Return
+	EndIf
+
+
+	$ret = ControlFocus($winHandle,"", $cttl)
+
+	if ($ret=0) Then
+		SendJSONResponse("Control/SetFocus :: ","Failed","control could not be focussed.","",$sSocket)
+		Return
+	EndIf
+
+	SendJSONResponse("Control/SetFocus :: ","OK","","",$sSocket)
+
+EndFunc
+
+
+func WF_control_settext($params, $sSocket)
+
+	;$params=buildParamArray($params); -- Decode Parmes
+
+	$class=ctrl_buildClassFromParams($params)
+
+	$winHandle=win_getHWND($params);;
+
+
+	if (@error<>0) Then
+		SendJSONResponse("Control/SetText :: ","Failed","Window not located.","",$sSocket)
+		Return
+	EndIf
+
+	$cttl = ctrl_getID ($params);;
+
+	if (@error<>0) Then
+		SendJSONResponse("Control/SetText ::"+$cttl,"Failed","control not located.","",$sSocket)
+		Return
+	EndIf
+
+	$sTxt = GetParamFromArray($params,"text")
+
+
+	if (@error<>0) Then
+		SendJSONResponse("Control/SetText ::"+$cttl,"Failed","need to specify text.","",$sSocket)
+		Return
+	EndIf
+
+	$ret = ControlSetText($winHandle,"", $cttl,$sTxt)
+
+	if ($ret=0) Then
+		SendJSONResponse("Control/SetText :: ","Failed","control text could not be set.","",$sSocket)
+		Return
+	EndIf
+
+	SendJSONResponse("Control/SetText :: ","OK","","",$sSocket)
+
+EndFunc
+
+func WF_control_typekeys($params, $sSocket)
+
+	;$params=buildParamArray($params); -- Decode Parmes
+
+	$class=ctrl_buildClassFromParams($params)
+
+	$winHandle=win_getHWND($params);;
+
+
+	if (@error<>0) Then
+		SendJSONResponse("Control/TypeKeys :: ","Failed","Window not located.","",$sSocket)
+		Return
+	EndIf
+
+	$cttl = ctrl_getID ($params);;
+
+	if (@error<>0) Then
+		SendJSONResponse("Control/TypeKeys ::"+$cttl,"Failed","control not located.","",$sSocket)
+		Return
+	EndIf
+
+	$sTxt = GetParamFromArray($params,"keys")
+
+
+	if (@error<>0) Then
+		SendJSONResponse("Control/TypeKeys ::"+$cttl,"Failed","need to specify keys to type.","",$sSocket)
+		Return
+	EndIf
+
+	$ret = ControlSend($winHandle,"", $cttl,$sTxt)
+
+	if ($ret=0) Then
+		SendJSONResponse("Control/TypeKeys :: ","Failed","control typing failed.","",$sSocket)
+		Return
+	EndIf
+
+	SendJSONResponse("Control/TypeKeys :: "&$class,"OK","","",$sSocket)
+
+EndFunc
+
+func WF_control_click($params, $sSocket)
+
+	$winHandle=win_getHWND($params);;
+
+
+	if (@error<>0) Then
+		SendJSONResponse("Control/Click :: ","Failed","Window not located.","",$sSocket)
+		Return
+	EndIf
+
+	$cttl = ctrl_getID ($params);;
+
+	if (@error<>0) Then
+		SendJSONResponse("Control/Click ::"+$cttl,"Failed","control not located.","",$sSocket)
+		Return
+	EndIf
+
+	$butt = GetParamFromArray($params,"button")
+
+
+	if (@error<>0) Then
+		SendJSONResponse("Control/Click ::"+$cttl,"Failed","need to specify a mouse button.","",$sSocket)
+		Return
+	EndIf
+
+	$sClicks = GetParamFromArray($params,"clicks")
+
+	$clicks =1
+
+	if (@error=0) Then
+
+		$clicks=Number($sClicks)
+
+	EndIf
+
+	$sX = GetParamFromArray($params,"x")
+
+	$x =-1
+
+	if (@error=0) Then
+
+		$x=Number($sX)
+
+	EndIf
+
+	$sY = GetParamFromArray($params,"y")
+
+	$y =-1
+
+	if (@error=0) Then
+
+		$y=Number($sY)
+
+	EndIf
+
+
+
+	$ret=0
+
+	if ($x=-1 or $y=-1) then
+		$ret = ControlClick($winHandle,"", $cttl,$butt, $clicks)
+	Else
+		$ret = ControlClick($winHandle,"", $cttl,$butt,$clicks,$x,$y)
+	EndIf
+
+
+	if ($ret=0) Then
+		SendJSONResponse("Control/Click :: ","Failed","control Click failed.","",$sSocket)
+		Return
+	EndIf
+
+	SendJSONResponse("Control/Click :: ","OK","","",$sSocket)
+
+EndFunc
+
+
 

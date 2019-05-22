@@ -3,7 +3,7 @@
 #AutoIt3Wrapper_UseX64=y
 #AutoIt3Wrapper_Change2CUI=y
 #AutoIt3Wrapper_Res_Description=seWINium Test Driver
-#AutoIt3Wrapper_Res_Fileversion=0.0.0.81
+#AutoIt3Wrapper_Res_Fileversion=0.0.0.102
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_LegalCopyright=(c) 2019 thinkingengine.net
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
@@ -19,6 +19,10 @@
 
 #ce ----------------------------------------------------------------------------
 Opt("TrayIconHide", 1) ;0=show, 1=hide tray icon
+
+AutoItSetOption( "SendKeyDelay", 100);
+AutoItSetOption( "SendKeyDownDelay", 100);
+
 
 ; --- Init
 Global $logFile ="" ; The file to log console too
@@ -42,6 +46,7 @@ EndIf
 ;--- Process Command Line
 
 $cmdShowKey=false;
+$cmdVerbose=false;
 
 if ($CmdLine[0]>0) Then
 	for $n =1 to $CmdLine[0]
@@ -57,6 +62,7 @@ if ($CmdLine[0]>0) Then
 			WriteLineToConsole("   -keygen-session :: Generate a temporary passphrase that will be required to accept commands for this session.")
 			WriteLineToConsole("   -keyshow :: Show the currently set passphrase that will be required to accept commands.")
 			WriteLineToConsole("   -log=""filename"":: Show the currently set passphrase that will be required to accept commands.")
+			WriteLineToConsole("   -v :: Verbose Logging.")
 			Exit 0
 		elseif (StringInStr($cmd,"-port=")==1) Then
 			$Port=Number(stringmid($cmd,7))
@@ -67,6 +73,8 @@ if ($CmdLine[0]>0) Then
 			WriteLineToConsole("Commands will be logged to '"&$logFile&"'.")
 		elseif ($cmd="-keyshow") Then
 			$cmdShowKey=true;
+		elseif ($cmd="-v") Then
+			$cmdVerbose=true;
 		elseif ($cmd="-keygen") Then
 			$gSecKey=uuid();
 			RegWrite("HKEY_CURRENT_USER\software\logic-worx\sewinium","key","REG_SZ",$gSecKey );
@@ -121,38 +129,38 @@ While 1
 
     $NewSocket = TCPAccept($MainSocket)
     If $NewSocket >= 0 Then
-        For $x = 0 to UBound($Socket)-1
-            If $Socket[$x] = -1 Then
-                $Socket[$x] = $NewSocket ;store the new socket
+        For $socks = 0 to UBound($Socket)-1
+            If $Socket[$socks] = -1 Then
+                $Socket[$socks] = $NewSocket ;store the new socket
                 ExitLoop
             EndIf
         Next
     EndIf
 
 
-    For $x = 0 to UBound($Socket)-1 ; loop to receive data from all sockets
-        If $Socket[$x] = -1 Then ContinueLoop
-        $NewData = TCPRecv($Socket[$x],1024)
+    For $socks = 0 to UBound($Socket)-1 ; loop to receive data from all sockets
+        If $Socket[$socks] = -1 Then ContinueLoop
+        $NewData = TCPRecv($Socket[$socks],1024)
         If @error Then
-            $Socket[$x] = -1
+            $Socket[$socks] = -1
             ContinueLoop
         ElseIf $NewData Then ; data received
-            $Buffer[$x] &= $NewData ;store it in the buffer
-            If StringInStr(StringStripCR($Buffer[$x]),@LF&@LF) Then
-                $FirstLine = StringLeft($Buffer[$x],StringInStr($Buffer[$x],@LF))
+            $Buffer[$socks] &= $NewData ;store it in the buffer
+            If StringInStr(StringStripCR($Buffer[$socks]),@LF&@LF) Then
+                $FirstLine = StringLeft($Buffer[$socks],StringInStr($Buffer[$socks],@LF))
                 $RequestType = StringLeft($FirstLine,StringInStr($FirstLine," ")-1)
                 If $RequestType = "GET" Then
                     $Request = StringTrimRight(StringTrimLeft($FirstLine,4),11)
 					;SendJSONResponse($request, "OK","No Action Taken","x=1",$Socket[$x]);
 					;SendError(500, "Command not supported.", $Socket[$x]);
                     ;WriteLineToConsole("Rcvd Request: "&$Request);
-					ExecutCommand($request,$Socket[$x])
+					ExecutCommand($request,$Socket[$socks])
                 ElseIf $RequestType = "POST" Then
-					SendError(500, "POST not supported.", $Socket[$x]);
+					SendError(500, "POST not supported.", $Socket[$socks]);
                 EndIf
-                $Buffer[$x] = ""
-                TCPCloseSocket($Socket[$x])
-                $Socket[$x] = -1
+                $Buffer[$socks] = ""
+                TCPCloseSocket($Socket[$socks])
+                $Socket[$socks] = -1
             EndIf
         EndIf
     Next
@@ -175,13 +183,18 @@ Func SendJSONResponse($command,$status, $message,$rawJSON,$sSocket)
 	$JSON=StringReplace($JSON,"'",'"')
 
     $iLen = StringLen($JSON)
-    $sPacket = Binary("HTTP/1.1 200 OK" & @CRLF & _
-    "Server: seWINium Driver/1.0 (" & @OSVersion & ") " & @AutoItVersion & @CRLF & _
-    "Connection: close" & @CRLF & _
-    "Content-Lenght: " & $iLen & @CRLF & _
-    "Content-Type: application/json" & @CRLF & _
-    @CRLF & _
-    $JSON)
+	$response="HTTP/1.1 200 OK" & @CRLF & _
+				"Server: seWINium Driver/1.0 (" & @OSVersion & ") " & @AutoItVersion & @CRLF & _
+				"Connection: close" & @CRLF & _
+				"Content-Lenght: " & $iLen & @CRLF & _
+				"Content-Type: application/json" & @CRLF & _
+				@CRLF & $JSON
+    $sPacket = Binary($response)
+
+	if ($cmdVerbose) then
+		WriteLineToConsole("- JSON Response: " &$response)
+	Endif
+
     $sSplit = StringSplit($sPacket,"")
     $sPacket = ""
     For $i = 1 to $sSplit[0]
@@ -194,13 +207,19 @@ EndFunc
 
 Func SendHTML($sHTML,$sSocket)
     $iLen = StringLen($sHTML)
-    $sPacket = Binary("HTTP/1.1 200 OK" & @CRLF & _
-    "Server: seWINium Driver/1.0 (" & @OSVersion & ") " & @AutoItVersion & @CRLF & _
-    "Connection: close" & @CRLF & _
-    "Content-Lenght: " & $iLen & @CRLF & _
-    "Content-Type: text/html" & @CRLF & _
-    @CRLF & _
-    $sHTML)
+	$response="HTTP/1.1 200 OK" & @CRLF & _
+			"Server: seWINium Driver/1.0 (" & @OSVersion & ") " & @AutoItVersion & @CRLF & _
+			"Connection: close" & @CRLF & _
+			"Content-Lenght: " & $iLen & @CRLF & _
+			"Content-Type: text/html" & @CRLF & _
+			@CRLF & $sHTML
+
+    $sPacket = Binary($response)
+
+	if ($cmdVerbose) then
+		WriteLineToConsole("- HTML Response: " &$response)
+	Endif
+
     $sSplit = StringSplit($sPacket,"")
     $sPacket = ""
     For $i = 1 to $sSplit[0]
@@ -215,6 +234,10 @@ Func SendFile($sAddress, $sType, $sSocket)
     $File = FileOpen($sAddress,16)
     $sImgBuffer = FileRead($File)
     FileClose($File)
+
+	if ($cmdVerbose) then
+		WriteLineToConsole("- File response sent:: " &$sAddress)
+	Endif
 
     $Packet = Binary("HTTP/1.1 200 OK" & @CRLF & _
     "Server: seWINium Driver/1.0 (" & @OSVersion & ") " & @AutoItVersion & @CRLF & _
@@ -236,13 +259,18 @@ EndFunc
 
 Func SendError($errCode, $sHTML, $sSocket)
      $iLen = StringLen($sHTML)
-    $sPacket = Binary("HTTP/1.1 "&$errCode&" OK" & @CRLF & _
-    "Server: seWINium Driver/1.0 (" & @OSVersion & ") " & @AutoItVersion & @CRLF & _
-    "Connection: close" & @CRLF & _
-    "Content-Lenght: " & $iLen & @CRLF & _
-    "Content-Type: text/html" & @CRLF & _
-    @CRLF & _
-    $sHTML)
+
+	 $response="HTTP/1.1 "&$errCode&" OK" & @CRLF & _
+				"Server: seWINium Driver/1.0 (" & @OSVersion & ") " & @AutoItVersion & @CRLF & _
+				"Connection: close" & @CRLF & _
+				"Content-Lenght: " & $iLen & @CRLF & _
+				"Content-Type: text/html" & @CRLF & _
+				@CRLF & $sHTML
+    $sPacket = Binary($response)
+	if ($cmdVerbose) then
+		WriteLineToConsole("- Error Response: " &$response)
+	Endif
+
     $sSplit = StringSplit($sPacket,"")
     $sPacket = ""
     For $i = 1 to $sSplit[0]
@@ -288,9 +316,12 @@ func ExecutCommand($command, $sSocket)
 	EndIf
 
 	if (StringLen($func)<2) Then
-		SendError(500, "You must specific a command.", $Socket[$x]);
+		SendError(500, "You must specific a command.", $Socket[$socks]);
 		return
 	EndIf
+
+	WriteLineToConsole("------------------------------------------------------------------------")
+	WriteLineToConsole("Command: "&$command)
 
 	; --- Validate Key
 
@@ -298,7 +329,7 @@ func ExecutCommand($command, $sSocket)
 	$key=GetParamFromArray($params,"key");
 
 	if (@error<>0 or $key<> $gSecKey) Then
-		SendError(500, "You must specific the correct key (passphrase) as a parameter.", $Socket[$x]);
+		SendError(500, "You must specific the correct key (passphrase) as a parameter.", $Socket[$socks]);
 		return
 	EndIf
 
@@ -309,16 +340,21 @@ func ExecutCommand($command, $sSocket)
 	$func=$func&"($params,"&$sSocket&")"
 
 
-	WriteLineToConsole("------------------------")
-	WriteLineToConsole("Command: "&$func)
+
+	WriteLineToConsole("- Internal Command: "&$func)
 
 
 
 	$return=Execute($func)
 	if (@error <>0) Then
-		SendError(500, "Command Not supported.", $Socket[$x]);
+		SendError(500, "Command Not supported.", $Socket[$socks]);
 		return
 	EndIf
+
+	if ($cmdVerbose) then
+		WriteLineToConsole("- Command Success.")
+	Endif
+
 EndFunc
 
 func buildParamArray($param)
@@ -352,10 +388,15 @@ EndFunc
 Func GetParamFromArray($params,$var)
     for $n= 0 to UBound($params)-1
 		if ($params[$n][0]==$var) Then
+			if ($cmdVerbose) then
+				WriteLineToConsole("- Found Parameter: [" &$var&"] = "&$params[$n][1])
+			Endif
 			return $params[$n][1]
 		EndIf
 	Next
-
+	if ($cmdVerbose) then
+		WriteLineToConsole("- Could not find Parameter: [" &$var&"]")
+	Endif
 	SetError(-1,0,"")
 
 EndFunc
@@ -383,7 +424,7 @@ Func URIEncode($urlText)
                     ($acode >= 97 And $acode <= 122)
                 $url = $url & StringMid($urlText, $i, 1)
             Case $acode = 32
-                $url = $url & "+"
+                $url = $url & " " ; Was + but Json Doe snot need it.
             Case Else
                 $url = $url & "%" & Hex($acode, 2)
         EndSelect
